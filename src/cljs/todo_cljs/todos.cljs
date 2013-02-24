@@ -4,10 +4,29 @@
 (def ENTER_KEY 13)
 (defn by-id [id] (.getElementById js/document id))
 (defn hello[] (js/alert "hello!"))
+(def todo-list (atom []))
+(def stat (atom {}))
+
+(defn change-toggle-all-checkbox-state [] )
+
+(defn save-todos []
+  (.setItem js/localStorage "todos-cljs"
+            (.stringify js/JSON (clj->js @todo-list))))
+
+(defn refresh-data []
+  (do
+    (save-todos)
+    ;; (compute-stats)
+    ;; (redraw-todos-ui)
+    ;; (redraw-status-ui)
+    (change-toggle-all-checkbox-state)))
 
 (defn add-todo [text]
   (let [trimmed (.trim text)]
-    (js/alert trimmed)))
+    (if (> (count trimmed) 0)
+      (do
+        (swap! todo-list conj {"title" trimmed, "done" false})
+        (refresh-data)))))
 
 (defn new-todo-handler [ev]
   (if (= ENTER_KEY (.-keyCode ev))
