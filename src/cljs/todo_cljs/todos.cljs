@@ -1,8 +1,14 @@
-(ns todo-cljs.todos)
+(ns todo-cljs.todos
+  (:require [clojure.browser.repl :as repl]
+            [clojure.browser.dom  :as dom]))
 
 ;; helpers, constants...
 (def ENTER_KEY 13)
-(defn by-id [id] (.getElementById js/document id))
+(defn by-id [id] (dom/get-element id))
+(defn create [el] (.createElement js/document el))
+(defn createText [text] (.createTextNode js/document text))
+(defn appendChild [parent child] (do (.appendChild parent child) child))
+
 (defn hello[] (js/alert "hello!"))
 (def todo-list (atom []))
 (def stat (atom {}))
@@ -19,11 +25,23 @@
         left      (- total completed)]
     (swap! stat conj {:total total :completed completed :left left})))
 
+(defn redraw-todos-ui []
+  (let [ul (by-id "todo-list")]
+    (set! (.-innerHTML ul) "")
+    (set! (.-value (by-id "new-todo")) "")
+    (dorun
+     (map
+      (fn [todo]
+       (dom/append
+        (dom/get-element "todo-list")
+        (.createTextNode js/document (todo "title"))))
+      @todo-list))))
+
 (defn refresh-data []
   (do
     (save-todos)
     (compute-stats)
-    ;; (redraw-todos-ui)
+    (redraw-todos-ui)
     ;; (redraw-status-ui)
     (change-toggle-all-checkbox-state)))
 
@@ -56,5 +74,15 @@
 (defn window-load-handler []
   (add-event-listeners))
 
-;; window.onload ...
+;; Launch window-load-handler when window loads
 (.addEventListener js/window "load" window-load-handler false)
+
+;; connect a browser-attached repl:
+(repl/connect "http://localhost:9000/repl")
+
+;; debugging:
+;; (in-ns 'todo-cljs.todos)
+;; (add-todo "one")
+;; (add-todo "two")
+;; (add-todo "three")
+;; (map #(js/alert %) @todo-list)
