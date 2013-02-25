@@ -13,10 +13,16 @@
   (.setItem js/localStorage "todos-cljs"
             (.stringify js/JSON (clj->js @todo-list))))
 
+(defn compute-stats []
+  (let [total     (count @todo-list)
+        completed (count (filter #(= true (% "completed")) @todo-list))
+        left      (- total completed)]
+    (swap! stat conj {:total total :completed completed :left left})))
+
 (defn refresh-data []
   (do
     (save-todos)
-    ;; (compute-stats)
+    (compute-stats)
     ;; (redraw-todos-ui)
     ;; (redraw-status-ui)
     (change-toggle-all-checkbox-state)))
@@ -25,7 +31,7 @@
   (let [trimmed (.trim text)]
     (if (> (count trimmed) 0)
       (do
-        (swap! todo-list conj {"title" trimmed, "done" false})
+        (swap! todo-list conj {"title" trimmed, "completed" false})
         (refresh-data)))))
 
 (defn new-todo-handler [ev]
