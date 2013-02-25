@@ -2,6 +2,8 @@
 
 A port of the JavaScript TODOs app to ClojureScript, copied from http://todomvc.com/vanilla-examples/vanillajs/
 
+Includes the template and CSS by Sindre Sorhus
+
 ## Usage
 
 ```
