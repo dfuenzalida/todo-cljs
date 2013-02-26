@@ -10,7 +10,11 @@
 (def todo-list (atom []))
 (def stat (atom {}))
 
+;; TODO: implement
 (defn change-toggle-all-checkbox-state [] )
+
+;; DECLARES
+(declare refresh-data)
 
 (defn save-todos []
   (.setItem js/localStorage "todos-cljs"
@@ -21,6 +25,15 @@
         completed (count (filter #(= true (% "completed")) @todo-list))
         left      (- total completed)]
     (swap! stat conj {:total total :completed completed :left left})))
+
+(defn remove-todo-by-id [id]
+  (reset! todo-list
+          (vec (filter #(not= (% "id") id) @todo-list))))
+
+(defn delete-click-handler [ev]
+  (let [id (.getAttribute (.-target ev) "data-todo-id")]
+    (remove-todo-by-id id)
+    (refresh-data)))
 
 (defn redraw-todos-ui []
   (let [ul (by-id "todo-list")]
@@ -46,7 +59,7 @@
 
           (set! (.-className delete-link) "destroy")
           (.setAttribute delete-link "data-todo-id" (todo "id"))
-          ;; TODO add even listener to click on button
+          (.addEventListener delete-link "click" delete-click-handler false)
 
           (set! (.-className div-display) "view")
           (.setAttribute div-display "data-todo-id" (todo "id"))
