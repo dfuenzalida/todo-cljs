@@ -59,6 +59,12 @@
 
           (set! (.-id li) (str "li_" (todo "id")))
           (dom/append li div-display input-edit-todo)
+
+          (if (todo "completed")
+            (do
+              (set! (.-className li) "complete")
+              (set! (.-checked checkbox) true)))
+
           (dom/append ul li)))
       @todo-list))))
 
@@ -94,9 +100,15 @@
         x))
     "00000000-0000-4000-0000-000000000000")))
 
+(defn toggle-all-handler [ev]
+  (let [checked (.-checked (.-target ev))
+        toggled (map #(assoc % "completed" checked) @todo-list)]
+    (reset! todo-list toggled)
+    (refresh-data)))
 
 (defn add-event-listeners []
-  (.addEventListener (by-id "new-todo") "keypress" new-todo-handler false))
+  (.addEventListener (by-id "new-todo") "keypress" new-todo-handler false)
+  (.addEventListener (by-id "toggle-all") "change" toggle-all-handler false))
 
 (defn window-load-handler []
   (add-event-listeners))
@@ -105,7 +117,7 @@
 (.addEventListener js/window "load" window-load-handler false)
 
 ;; connect a browser-attached repl:
-;; (repl/connect "http://localhost:9000/repl")
+(repl/connect "http://localhost:9000/repl")
 
 ;; debugging:
 ;; (in-ns 'todo-cljs.todos)
