@@ -5,9 +5,6 @@
 ;; helpers, constants...
 (def ENTER_KEY 13)
 (defn by-id [id] (dom/get-element id))
-(defn create [el] (.createElement js/document el))
-(defn createText [text] (.createTextNode js/document text))
-(defn appendChild [parent child] (do (.appendChild parent child) child))
 
 (defn hello[] (js/alert "hello!"))
 (def todo-list (atom []))
@@ -25,19 +22,44 @@
         left      (- total completed)]
     (swap! stat conj {:total total :completed completed :left left})))
 
-(defn create-li [todo]
-  (let [li (dom/element :li)]
-    (set! (.-id li) (str "li_" (todo "id")))
-    (dom/append li (.createTextNode js/document (todo "title")))
-    li))
-
 (defn redraw-todos-ui []
   (let [ul (by-id "todo-list")]
     (set! (.-innerHTML ul) "")
     (set! (.-value (by-id "new-todo")) "")
-    (dorun
+    (dorun ;; materialize lazy list returned by map below
      (map
-      (fn [todo] (dom/append ul (create-li todo)))
+      (fn [todo]
+        (let [li (dom/element :li)
+              checkbox        (dom/element :input)
+              label           (dom/element :label)
+              delete-link     (dom/element :button)
+              div-display     (dom/element :div)
+              input-edit-todo (dom/element :input)]
+          (set! (.-className checkbox) "toggle")
+          (.setAttribute checkbox "data-todo-id" (todo "id"))
+          (set! (.-type checkbox) "checkbox")
+          ;; TODO add event listener to checkbox
+
+          (.setAttribute label "data-todo-id" (todo "id"))
+          (dom/append label (.createTextNode js/document (todo "title")))
+          ;; TODO add event listener to doubleclick on label
+
+          (set! (.-className delete-link) "destroy")
+          (.setAttribute delete-link "data-todo-id" (todo "id"))
+          ;; TODO add even listener to click on button
+
+          (set! (.-className div-display) "view")
+          (.setAttribute div-display "data-todo-id" (todo "id"))
+          (dom/append div-display checkbox label delete-link)
+
+          (set! (.-id input-edit-todo) (str "input_" (todo "id")))
+          (set! (.-className input-edit-todo) "edit")
+          (set! (.-value input-edit-todo) (todo "title"))
+          ;; TODO add even listener to input
+
+          (set! (.-id li) (str "li_" (todo "id")))
+          (dom/append li div-display input-edit-todo)
+          (dom/append ul li)))
       @todo-list))))
 
 (defn refresh-data []
@@ -83,7 +105,7 @@
 (.addEventListener js/window "load" window-load-handler false)
 
 ;; connect a browser-attached repl:
-(repl/connect "http://localhost:9000/repl")
+;; (repl/connect "http://localhost:9000/repl")
 
 ;; debugging:
 ;; (in-ns 'todo-cljs.todos)
