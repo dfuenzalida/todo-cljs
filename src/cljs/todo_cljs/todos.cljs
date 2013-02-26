@@ -25,16 +25,19 @@
         left      (- total completed)]
     (swap! stat conj {:total total :completed completed :left left})))
 
+(defn create-li [todo]
+  (let [li (dom/element :li)]
+    (set! (.-id li) (str "li_" (todo "id")))
+    (dom/append li (.createTextNode js/document (todo "title")))
+    li))
+
 (defn redraw-todos-ui []
   (let [ul (by-id "todo-list")]
     (set! (.-innerHTML ul) "")
     (set! (.-value (by-id "new-todo")) "")
     (dorun
      (map
-      (fn [todo]
-       (dom/append
-        (dom/get-element "todo-list")
-        (.createTextNode js/document (todo "title"))))
+      (fn [todo] (dom/append ul (create-li todo)))
       @todo-list))))
 
 (defn refresh-data []
@@ -45,11 +48,13 @@
     ;; (redraw-status-ui)
     (change-toggle-all-checkbox-state)))
 
+(declare get-uuid)
+
 (defn add-todo [text]
   (let [trimmed (.trim text)]
     (if (> (count trimmed) 0)
       (do
-        (swap! todo-list conj {"title" trimmed, "completed" false})
+        (swap! todo-list conj {"id" (get-uuid) "title" trimmed, "completed" false})
         (refresh-data)))))
 
 (defn new-todo-handler [ev]
