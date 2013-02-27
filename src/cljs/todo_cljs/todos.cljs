@@ -35,6 +35,19 @@
     (remove-todo-by-id id)
     (refresh-data)))
 
+;; HELPER: updates a todo by its id, changes puts a new val for the attr
+(defn update-attr [id attr val]
+  (let [updated
+        (vec (map #(if (= (% "id") id) (conj % {attr val}) %) @todo-list))]
+    (reset! todo-list updated)))
+
+(defn checkbox-change-handler [ev]
+  (let [checkbox (.-target ev)
+        id       (.getAttribute checkbox "data-todo-id")
+        checked  (.-checked checkbox)]
+    (update-attr id "completed" checked)
+    (refresh-data)))
+
 (defn redraw-todos-ui []
   (let [ul (by-id "todo-list")]
     (set! (.-innerHTML ul) "")
@@ -51,6 +64,7 @@
           (set! (.-className checkbox) "toggle")
           (.setAttribute checkbox "data-todo-id" (todo "id"))
           (set! (.-type checkbox) "checkbox")
+          (.addEventListener checkbox "change" checkbox-change-handler false)
           ;; TODO add event listener to checkbox
 
           (.setAttribute label "data-todo-id" (todo "id"))
