@@ -65,7 +65,6 @@
           (.setAttribute checkbox "data-todo-id" (todo "id"))
           (set! (.-type checkbox) "checkbox")
           (.addEventListener checkbox "change" checkbox-change-handler false)
-          ;; TODO add event listener to checkbox
 
           (.setAttribute label "data-todo-id" (todo "id"))
           (dom/append label (.createTextNode js/document (todo "title")))
@@ -95,12 +94,34 @@
           (dom/append ul li)))
       @todo-list))))
 
+(defn draw-todo-count []
+  (let [number (dom/element :strong)
+        remaining (dom/element :span)
+        text (str " " (if (= 1 (:left @stat)) "item" "items") " left")
+        footer (by-id "footer")]
+    (set! (.-innerHTML number) (:left @stat))
+    (set! (.-id remaining) "todo-count")
+    (dom/append remaining number)
+    (dom/append remaining (.createTextNode js/document text))
+    (dom/append footer remaining)))
+
+;; TODO
+(defn draw-todo-clear [] )
+
+(defn redraw-status-ui []
+  (let [footer  (by-id"footer")
+        display (if (empty? @todo-list) "none" "block")]
+    (set! (.-innerHTML footer) "")
+    (set! (.-display (.-style (by-id "footer"))) display)
+    (if (not= 0 (:completed @stat)) (draw-todo-clear))
+    (if (not= 0 (:total @stat)) (draw-todo-count))))
+
 (defn refresh-data []
   (do
     (save-todos)
     (compute-stats)
     (redraw-todos-ui)
-    ;; (redraw-status-ui)
+    (redraw-status-ui)
     (change-toggle-all-checkbox-state)))
 
 (declare get-uuid)
