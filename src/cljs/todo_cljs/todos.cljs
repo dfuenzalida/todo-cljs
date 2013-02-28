@@ -105,8 +105,17 @@
     (dom/append remaining (.createTextNode js/document text))
     (dom/append footer remaining)))
 
-;; TODO
-(defn draw-todo-clear [] )
+(defn clear-click-handler []
+  (reset! todo-list (filter #(not (% "completed")) @todo-list))
+  (refresh-data))
+
+(defn draw-todo-clear []
+  (let [button (dom/element :button)
+        footer (by-id "footer")]
+    (set! (.-id button) "clear-completed")
+    (.addEventListener button "click" clear-click-handler false)
+    (set! (.-innerHTML button) (str "Clear completed (" (:completed @stat) ")"))
+    (dom/append footer button)))
 
 (defn redraw-status-ui []
   (let [footer  (by-id"footer")
