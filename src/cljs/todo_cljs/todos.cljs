@@ -60,7 +60,7 @@
   (let [input (.-target ev)
         text  (.trim (.-value input))
         id    (apply str (drop 6 (.-id input)))]
-    (if (> (count text) 0)
+    (if (seq text)
       (if (= ENTER_KEY (.-keyCode ev))
         (do
           (update-attr id "title" text)
@@ -176,7 +176,7 @@
 
 (defn add-todo [text]
   (let [trimmed (.trim text)]
-    (if (> (count trimmed) 0)
+    (if (seq trimmed)
       (do
         (swap! todo-list conj {"id" (get-uuid) "title" trimmed, "completed" false})
         (refresh-data)))))
