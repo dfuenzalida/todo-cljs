@@ -2,42 +2,53 @@
   (:require [clojure.browser.repl :as repl]
             [clojure.browser.dom  :as dom]))
 
-;; helpers, constants...
+;; Constants, Helpers and State
+
 (def ENTER_KEY 13)
 (def STORAGE_NAME "todos-cljs")
 (defn by-id [id] (dom/get-element id))
-
-(defn hello[] (js/alert "hello!"))
 (def todo-list (atom []))
 (def stat (atom {}))
 
-;; DECLARES
-(declare refresh-data)
+;; State management
 
 (defn save-todos []
   (.setItem js/localStorage STORAGE_NAME
             (.stringify js/JSON (clj->js @todo-list))))
 
+(defn load-todos []
+  (if (not (seq (.getItem js/localStorage STORAGE_NAME)))
+    (do
+      (reset! todo-list [])
+      (save-todos)))
+  (reset! todo-list
+         (js->clj (.parse js/JSON (.getItem js/localStorage STORAGE_NAME)))))
+
+;; TODO reimplement as a fn only and remove the atom
 (defn compute-stats []
   (let [total     (count @todo-list)
         completed (count (filter #(= true (% "completed")) @todo-list))
         left      (- total completed)]
     (swap! stat conj {:total total :completed completed :left left})))
 
-(defn remove-todo-by-id [id]
-  (reset! todo-list
-          (vec (filter #(not= (% "id") id) @todo-list))))
-
-(defn delete-click-handler [ev]
-  (let [id (.getAttribute (.-target ev) "data-todo-id")]
-    (remove-todo-by-id id)
-    (refresh-data)))
-
 ;; HELPER: updates a todo by its id, changes puts a new val for the attr
 (defn update-attr [id attr val]
   (let [updated
         (vec (map #(if (= (% "id") id) (conj % {attr val}) %) @todo-list))]
     (reset! todo-list updated)))
+
+(defn remove-todo-by-id [id]
+  (reset! todo-list
+          (vec (filter #(not= (% "id") id) @todo-list))))
+
+;; UI and handlers
+
+(declare refresh-data)
+
+(defn delete-click-handler [ev]
+  (let [id (.getAttribute (.-target ev) "data-todo-id")]
+    (remove-todo-by-id id)
+    (refresh-data)))
 
 (defn checkbox-change-handler [ev]
   (let [checkbox (.-target ev)
@@ -192,14 +203,6 @@
     (reset! todo-list toggled)
     (refresh-data)))
 
-(defn load-todos []
-  (if (not (seq (.getItem js/localStorage STORAGE_NAME)))
-    (do
-      (reset! todo-list [])
-      (save-todos)))
-  (reset! todo-list
-         (js->clj (.parse js/JSON (.getItem js/localStorage STORAGE_NAME)))))
-
 (defn add-event-listeners []
   (.addEventListener (by-id "new-todo") "keypress" new-todo-handler false)
   (.addEventListener (by-id "toggle-all") "change" toggle-all-handler false))
@@ -213,9 +216,9 @@
 (.addEventListener js/window "load" window-load-handler false)
 
 ;; To connect a browser-attached repl:
-(repl/connect "http://localhost:9000/repl")
+;; (repl/connect "http://localhost:9000/repl")
 
-;; debugging:
+;; Debugging:
 ;; (in-ns 'todo-cljs.todos)
 ;; (add-todo "one")
 ;; (add-todo "two")
