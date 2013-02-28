@@ -4,6 +4,7 @@
 
 ;; helpers, constants...
 (def ENTER_KEY 13)
+(def STORAGE_NAME "todos-cljs")
 (defn by-id [id] (dom/get-element id))
 
 (defn hello[] (js/alert "hello!"))
@@ -17,7 +18,7 @@
 (declare refresh-data)
 
 (defn save-todos []
-  (.setItem js/localStorage "todos-cljs"
+  (.setItem js/localStorage STORAGE_NAME
             (.stringify js/JSON (clj->js @todo-list))))
 
 (defn compute-stats []
@@ -48,6 +49,34 @@
     (update-attr id "completed" checked)
     (refresh-data)))
 
+(defn todo-content-handler [ev]
+  (let [id    (.getAttribute (.-target ev) "data-todo-id")
+        div   (by-id (str "li_" id))
+        input (by-id (str "input_" id))]
+    (set! (.-className div) "editing")
+    (.focus input)))
+
+(defn input-todo-key-handler [ev]
+  (let [input (.-target ev)
+        text  (.trim (.-value input))
+        id    (apply str (drop 6 (.-id input)))]
+    (if (> (count text) 0)
+      (if (= ENTER_KEY (.-keyCode ev))
+        (do
+          (update-attr id "title" text)
+          (refresh-data)))
+      (do
+        (remove-todo-by-id id)
+        (refresh-data)))))
+
+(defn input-todo-blur-handler [ev]
+  (let [input (.-target ev)
+        text  (.trim (.-value input))
+        id    (apply str (drop 6 (.-id input)))]
+    (do
+      (update-attr id "title" text)
+      (refresh-data))))
+
 (defn redraw-todos-ui []
   (let [ul (by-id "todo-list")]
     (set! (.-innerHTML ul) "")
@@ -55,7 +84,7 @@
     (dorun ;; materialize lazy list returned by map below
      (map
       (fn [todo]
-        (let [li (dom/element :li)
+        (let [li              (dom/element :li)
               checkbox        (dom/element :input)
               label           (dom/element :label)
               delete-link     (dom/element :button)
@@ -68,7 +97,7 @@
 
           (.setAttribute label "data-todo-id" (todo "id"))
           (dom/append label (.createTextNode js/document (todo "title")))
-          ;; TODO add event listener to doubleclick on label
+          (.addEventListener label "dblclick" todo-content-handler false)
 
           (set! (.-className delete-link) "destroy")
           (.setAttribute delete-link "data-todo-id" (todo "id"))
@@ -81,7 +110,8 @@
           (set! (.-id input-edit-todo) (str "input_" (todo "id")))
           (set! (.-className input-edit-todo) "edit")
           (set! (.-value input-edit-todo) (todo "title"))
-          ;; TODO add even listener to input
+          (.addEventListener input-edit-todo "keypress" input-todo-key-handler false)
+          (.addEventListener input-edit-todo "blur" input-todo-blur-handler false)
 
           (set! (.-id li) (str "li_" (todo "id")))
           (dom/append li div-display input-edit-todo)
@@ -118,7 +148,7 @@
     (dom/append footer button)))
 
 (defn redraw-status-ui []
-  (let [footer  (by-id"footer")
+  (let [footer  (by-id "footer")
         display (if (empty? @todo-list) "none" "block")]
     (set! (.-innerHTML footer) "")
     (set! (.-display (.-style (by-id "footer"))) display)
@@ -133,7 +163,16 @@
     (redraw-status-ui)
     (change-toggle-all-checkbox-state)))
 
-(declare get-uuid)
+;; This get-uuid fn is almost equiv to the original
+(defn get-uuid []
+  (apply
+   str
+   (map
+    (fn [x]
+      (if (= x \0)
+        (.toString (bit-or (* 16 (.random js/Math)) 0) 16)
+        x))
+    "00000000-0000-4000-0000-000000000000")))
 
 (defn add-todo [text]
   (let [trimmed (.trim text)]
@@ -146,35 +185,34 @@
   (if (= ENTER_KEY (.-keyCode ev))
     (add-todo (.-value (by-id "new-todo")))))
 
-;; This get-uuid fn is almost equiv to the original
-(defn get-uuid []
-  (apply
-   str
-   (map
-    (fn [x]
-      (if (= x \0)
-        (.toString (bit-or (* 16 (.random js/Math)) 0) 16)
-        x))
-    "00000000-0000-4000-0000-000000000000")))
-
 (defn toggle-all-handler [ev]
   (let [checked (.-checked (.-target ev))
         toggled (map #(assoc % "completed" checked) @todo-list)]
     (reset! todo-list toggled)
     (refresh-data)))
 
+(defn load-todos []
+  (if (not (seq (.getItem js/localStorage STORAGE_NAME)))
+    (do
+      (reset! todo-list [])
+      (save-todos)))
+  (reset! todo-list
+         (js->clj (.parse js/JSON (.getItem js/localStorage STORAGE_NAME)))))
+
 (defn add-event-listeners []
   (.addEventListener (by-id "new-todo") "keypress" new-todo-handler false)
   (.addEventListener (by-id "toggle-all") "change" toggle-all-handler false))
 
 (defn window-load-handler []
+  (load-todos)
+  (refresh-data)
   (add-event-listeners))
 
 ;; Launch window-load-handler when window loads
 (.addEventListener js/window "load" window-load-handler false)
 
-;; connect a browser-attached repl:
-(repl/connect "http://localhost:9000/repl")
+;; To connect a browser-attached repl:
+;; (repl/connect "http://localhost:9000/repl")
 
 ;; debugging:
 ;; (in-ns 'todo-cljs.todos)
