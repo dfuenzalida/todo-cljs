@@ -11,9 +11,6 @@
 (def todo-list (atom []))
 (def stat (atom {}))
 
-;; TODO: implement
-(defn change-toggle-all-checkbox-state [] )
-
 ;; DECLARES
 (declare refresh-data)
 
@@ -155,13 +152,17 @@
     (if (not= 0 (:completed @stat)) (draw-todo-clear))
     (if (not= 0 (:total @stat)) (draw-todo-count))))
 
+(defn change-toggle-all-checkbox-state []
+  (let [toggle-all  (by-id "toggle-all")
+        all-checked (every? #(= true (% "completed")) @todo-list)]
+    (set! (.-checked toggle-all) all-checked)))
+
 (defn refresh-data []
-  (do
-    (save-todos)
-    (compute-stats)
-    (redraw-todos-ui)
-    (redraw-status-ui)
-    (change-toggle-all-checkbox-state)))
+  (save-todos)
+  (compute-stats)
+  (redraw-todos-ui)
+  (redraw-status-ui)
+  (change-toggle-all-checkbox-state))
 
 ;; This get-uuid fn is almost equiv to the original
 (defn get-uuid []
@@ -212,7 +213,7 @@
 (.addEventListener js/window "load" window-load-handler false)
 
 ;; To connect a browser-attached repl:
-;; (repl/connect "http://localhost:9000/repl")
+(repl/connect "http://localhost:9000/repl")
 
 ;; debugging:
 ;; (in-ns 'todo-cljs.todos)
