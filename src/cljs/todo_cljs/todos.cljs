@@ -91,41 +91,41 @@
       (refresh-data))))
 
 (defn redraw-todos-ui []
-  (let [ul (by-id "todo-list")]
-    (set! (.-innerHTML ul) "") ;; (dom/remove-children "todo-list")) ???
-    (dom/set-value (by-id "new-todo") "")
-    (dorun ;; materialize lazy list returned by map below
-     (map
-      (fn [todo]
-        (let [
-          id (todo "id")
-          li          (elemt :li {"id" (str "li_" id)})
-          checkbox    (elemt :input {"class" "toggle" "data-todo-id" id
-                                     "type" "checkbox"})
-          label       (elemt :label {"data-todo-id" id})
-          delete-link (elemt :button {"class" "destroy" "data-todo-id" id})
-          div-display (elemt :div {"class" "view" "data-todo-id" id})
-          input-todo  (elemt :input {"id" (str "input_" id) "class" "edit"})]
+  (set! (.-innerHTML (by-id "todo-list")) "")
+  ;; (dom/remove-children "todo-list")) ???
+  (dom/set-value (by-id "new-todo") "")
+  (dorun ;; materialize lazy list returned by map below
+   (map
+    (fn [todo]
+      (let [
+        id          (todo "id")
+        li          (elemt :li {"id" (str "li_" id)})
+        checkbox    (elemt :input {"class" "toggle" "data-todo-id" id
+                                   "type" "checkbox"})
+        label       (elemt :label {"data-todo-id" id})
+        delete-link (elemt :button {"class" "destroy" "data-todo-id" id})
+        div-display (elemt :div {"class" "view" "data-todo-id" id})
+        input-todo  (elemt :input {"id" (str "input_" id) "class" "edit"})]
 
-          (dom/set-text label (todo "title"))
-          (dom/set-value input-todo (todo "title"))
+        (dom/set-text label (todo "title"))
+        (dom/set-value input-todo (todo "title"))
 
-          (ev/listen checkbox "change" checkbox-change-handler)
-          (ev/listen label "dblclick" todo-content-handler)
-          (ev/listen delete-link "click" delete-click-handler)
-          (ev/listen input-todo "keypress" input-todo-key-handler)
-          (ev/listen input-todo "blur" input-todo-blur-handler)
+        (ev/listen checkbox "change" checkbox-change-handler)
+        (ev/listen label "dblclick" todo-content-handler)
+        (ev/listen delete-link "click" delete-click-handler)
+        (ev/listen input-todo "keypress" input-todo-key-handler)
+        (ev/listen input-todo "blur" input-todo-blur-handler)
 
-          (dom/append div-display checkbox label delete-link)
-          (dom/append li div-display input-todo)
+        (dom/append div-display checkbox label delete-link)
+        (dom/append li div-display input-todo)
 
-          (if (todo "completed")
-            (do
-              (dom/set-properties li {"class" "complete"})
-              (dom/set-properties checkbox {"checked" true})))
+        (if (todo "completed")
+          (do
+            (dom/set-properties li {"class" "complete"})
+            (dom/set-properties checkbox {"checked" true})))
 
-          (dom/append ul li)))
-      @todo-list))))
+        (dom/append (by-id "todo-list") li)))
+    @todo-list)))
 
 (defn draw-todo-count []
   (let [stat (stats)
