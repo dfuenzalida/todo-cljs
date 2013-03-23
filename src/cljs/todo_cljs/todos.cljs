@@ -1,6 +1,7 @@
 (ns todo-cljs.todos
   (:require [clojure.browser.repl :as repl]
-            [clojure.browser.dom  :as dom]))
+            [clojure.browser.dom  :as dom]
+            [clojure.browser.event :as ev]))
 
 ;; Constants, Helpers and State
 
@@ -100,15 +101,15 @@
           (set! (.-className checkbox) "toggle")
           (.setAttribute checkbox "data-todo-id" (todo "id"))
           (set! (.-type checkbox) "checkbox")
-          (.addEventListener checkbox "change" checkbox-change-handler false)
+          (ev/listen checkbox "change" checkbox-change-handler)
 
           (.setAttribute label "data-todo-id" (todo "id"))
           (dom/append label (.createTextNode js/document (todo "title")))
-          (.addEventListener label "dblclick" todo-content-handler false)
+          (ev/listen label "dblclick" todo-content-handler)
 
           (set! (.-className delete-link) "destroy")
           (.setAttribute delete-link "data-todo-id" (todo "id"))
-          (.addEventListener delete-link "click" delete-click-handler false)
+          (ev/listen delete-link "click" delete-click-handler)
 
           (set! (.-className div-display) "view")
           (.setAttribute div-display "data-todo-id" (todo "id"))
@@ -117,8 +118,8 @@
           (set! (.-id input-edit-todo) (str "input_" (todo "id")))
           (set! (.-className input-edit-todo) "edit")
           (set! (.-value input-edit-todo) (todo "title"))
-          (.addEventListener input-edit-todo "keypress" input-todo-key-handler false)
-          (.addEventListener input-edit-todo "blur" input-todo-blur-handler false)
+          (ev/listen input-edit-todo "keypress" input-todo-key-handler)
+          (ev/listen input-edit-todo "blur" input-todo-blur-handler)
 
           (set! (.-id li) (str "li_" (todo "id")))
           (dom/append li div-display input-edit-todo)
@@ -151,8 +152,9 @@
   (let [button (dom/element :button)
         footer (by-id "footer")]
     (set! (.-id button) "clear-completed")
-    (.addEventListener button "click" clear-click-handler false)
-    (set! (.-innerHTML button) (str "Clear completed (" (:completed (stats)) ")"))
+    (ev/listen button "click" clear-click-handler)
+    (set! (.-innerHTML button)
+          (str "Clear completed (" (:completed (stats)) ")"))
     (dom/append footer button)))
 
 (defn redraw-status-ui []
@@ -205,8 +207,9 @@
     (refresh-data)))
 
 (defn add-event-listeners []
-  (.addEventListener (by-id "new-todo") "keypress" new-todo-handler false)
-  (.addEventListener (by-id "toggle-all") "change" toggle-all-handler false))
+  (ev/listen (by-id "new-todo") "keypress" new-todo-handler)
+  (ev/listen (by-id "toggle-all") "change" toggle-all-handler)
+)
 
 (defn window-load-handler []
   (load-todos)
@@ -214,7 +217,8 @@
   (add-event-listeners))
 
 ;; Launch window-load-handler when window loads
-(.addEventListener js/window "load" window-load-handler false)
+;; -- not sure why (ev/listen js/window "load" fn) does not work
+(goog.events/listen js/window "load" window-load-handler)
 
 ;; To connect a browser-attached repl:
 ;; (repl/connect "http://localhost:9000/repl")
