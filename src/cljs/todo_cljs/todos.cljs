@@ -98,36 +98,36 @@
               delete-link     (dom/element :button)
               div-display     (dom/element :div)
               input-edit-todo (dom/element :input)]
-          (set! (.-className checkbox) "toggle")
-          (.setAttribute checkbox "data-todo-id" (todo "id"))
-          (set! (.-type checkbox) "checkbox")
+
+          (dom/set-properties checkbox
+            {"class" "toggle" "data-todo-id" (todo "id") "type" "checkbox" })
           (ev/listen checkbox "change" checkbox-change-handler)
 
-          (.setAttribute label "data-todo-id" (todo "id"))
-          (dom/append label (.createTextNode js/document (todo "title")))
+          (dom/set-properties label {"data-todo-id" (todo "id")})
+          (dom/set-text label (todo "title"))
           (ev/listen label "dblclick" todo-content-handler)
 
-          (set! (.-className delete-link) "destroy")
-          (.setAttribute delete-link "data-todo-id" (todo "id"))
+          (dom/set-properties delete-link
+            {"class" "destroy" "data-todo-id" (todo "id")})
           (ev/listen delete-link "click" delete-click-handler)
 
-          (set! (.-className div-display) "view")
-          (.setAttribute div-display "data-todo-id" (todo "id"))
+          (dom/set-properties div-display
+            {"class" "view" "data-todo-id" (todo "id")})
           (dom/append div-display checkbox label delete-link)
 
-          (set! (.-id input-edit-todo) (str "input_" (todo "id")))
-          (set! (.-className input-edit-todo) "edit")
-          (set! (.-value input-edit-todo) (todo "title"))
+          (dom/set-properties input-edit-todo
+            {"id" (str "input_" (todo "id")) "class" "edit"})
+          (dom/set-value input-edit-todo (todo "title"))
           (ev/listen input-edit-todo "keypress" input-todo-key-handler)
           (ev/listen input-edit-todo "blur" input-todo-blur-handler)
 
-          (set! (.-id li) (str "li_" (todo "id")))
+          (dom/set-properties li {"id" (str "li_" (todo "id"))})
           (dom/append li div-display input-edit-todo)
 
           (if (todo "completed")
             (do
-              (set! (.-className li) "complete")
-              (set! (.-checked checkbox) true)))
+              (dom/set-properties li {"class" "complete"})
+              (dom/set-properties checkbox {"checked" true})))
 
           (dom/append ul li)))
       @todo-list))))
