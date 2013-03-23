@@ -26,6 +26,9 @@
 ;; HELPER: shortcut for dom/get-element
 (defn by-id [id] (dom/get-element id))
 
+;; HELPER: shortcut for dom/element
+(defn elemt [tag params] (dom/element tag params))
+
 ;; HELPER: :total tasks, :completed tasks and :left tasks (not completed)
 (defn stats []
   (let [total     (count @todo-list)
@@ -63,7 +66,7 @@
   (let [id    (.getAttribute (.-target ev) "data-todo-id")
         div   (by-id (str "li_" id))
         input (by-id (str "input_" id))]
-    (set! (.-className div) "editing")
+    (dom/set-properties div {"class" "editing"})
     (.focus input)))
 
 (defn input-todo-key-handler [ev]
@@ -89,43 +92,32 @@
 
 (defn redraw-todos-ui []
   (let [ul (by-id "todo-list")]
-    (set! (.-innerHTML ul) "")
-    ;;(dom/remove-children "todo-list")
+    (set! (.-innerHTML ul) "") ;; (dom/remove-children "todo-list")) ???
     (dom/set-value (by-id "new-todo") "")
     (dorun ;; materialize lazy list returned by map below
      (map
       (fn [todo]
-        (let [li              (dom/element :li)
-              checkbox        (dom/element :input)
-              label           (dom/element :label)
-              delete-link     (dom/element :button)
-              div-display     (dom/element :div)
-              input-edit-todo (dom/element :input)]
+        (let [
+          id (todo "id")
+          li          (elemt :li {"id" (str "li_" id)})
+          checkbox    (elemt :input {"class" "toggle" "data-todo-id" id
+                                     "type" "checkbox"})
+          label       (elemt :label {"data-todo-id" id})
+          delete-link (elemt :button {"class" "destroy" "data-todo-id" id})
+          div-display (elemt :div {"class" "view" "data-todo-id" id})
+          input-todo  (elemt :input {"id" (str "input_" id) "class" "edit"})]
 
-          (dom/set-properties checkbox
-            {"class" "toggle" "data-todo-id" (todo "id") "type" "checkbox" })
-          (ev/listen checkbox "change" checkbox-change-handler)
-
-          (dom/set-properties label {"data-todo-id" (todo "id")})
           (dom/set-text label (todo "title"))
+          (dom/set-value input-todo (todo "title"))
+
+          (ev/listen checkbox "change" checkbox-change-handler)
           (ev/listen label "dblclick" todo-content-handler)
-
-          (dom/set-properties delete-link
-            {"class" "destroy" "data-todo-id" (todo "id")})
           (ev/listen delete-link "click" delete-click-handler)
+          (ev/listen input-todo "keypress" input-todo-key-handler)
+          (ev/listen input-todo "blur" input-todo-blur-handler)
 
-          (dom/set-properties div-display
-            {"class" "view" "data-todo-id" (todo "id")})
           (dom/append div-display checkbox label delete-link)
-
-          (dom/set-properties input-edit-todo
-            {"id" (str "input_" (todo "id")) "class" "edit"})
-          (dom/set-value input-edit-todo (todo "title"))
-          (ev/listen input-edit-todo "keypress" input-todo-key-handler)
-          (ev/listen input-edit-todo "blur" input-todo-blur-handler)
-
-          (dom/set-properties li {"id" (str "li_" (todo "id"))})
-          (dom/append li div-display input-edit-todo)
+          (dom/append li div-display input-todo)
 
           (if (todo "completed")
             (do
@@ -150,9 +142,8 @@
 
 (defn draw-todo-clear []
   (let [footer (by-id "footer")
-        button (dom/element
-                :button {"id" "clear-completed"}
-                (str "Clear completed (" (:completed (stats)) ")"))]
+        message (str "Clear completed (" (:completed (stats)) ")")
+        button (dom/element :button {"id" "clear-completed"} message)]
     (ev/listen button "click" clear-click-handler)
     (dom/append footer button)))
 
@@ -172,7 +163,6 @@
 
 (defn refresh-data []
   (save-todos)
-  ;; (compute-stats)
   (redraw-todos-ui)
   (redraw-status-ui)
   (change-toggle-all-checkbox-state))
@@ -189,10 +179,10 @@
     "00000000-0000-4000-0000-000000000000")))
 
 (defn add-todo [text]
-  (let [trimmed (.trim text)]
-    (if (seq trimmed)
+  (let [tt (.trim text)]
+    (if (seq tt)
       (do
-        (swap! todo-list conj {"id" (get-uuid) "title" trimmed, "completed" false})
+        (swap! todo-list conj {"id" (get-uuid) "title" tt "completed" false})
         (refresh-data)))))
 
 (defn new-todo-handler [ev]
