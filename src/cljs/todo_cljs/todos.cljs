@@ -3,12 +3,11 @@
             [clojure.browser.dom  :as dom]
             [clojure.browser.event :as ev]))
 
-;; Constants, Helpers and State
+;; Constants and State
 
 (def ENTER_KEY 13)
 (def STORAGE_NAME "todos-cljs")
-(defn by-id [id] (dom/get-element id))
-(def todo-list (atom [])) ;; all the application state in this vector
+(def todo-list (atom [])) ;; ALL APPLICATION STATE LIVES HERE
 
 ;; State management
 
@@ -24,7 +23,10 @@
   (reset! todo-list
          (js->clj (.parse js/JSON (.getItem js/localStorage STORAGE_NAME)))))
 
-;; now this fn is called whenever info about the status is needed
+;; HELPER: shortcut for dom/get-element
+(defn by-id [id] (dom/get-element id))
+
+;; HELPER: :total tasks, :completed tasks and :left tasks (not completed)
 (defn stats []
   (let [total     (count @todo-list)
         completed (count (filter #(= true (% "completed")) @todo-list))
@@ -80,7 +82,7 @@
 (defn input-todo-blur-handler [ev]
   (let [input (.-target ev)
         text  (.trim (.-value input))
-        id    (apply str (drop 6 (.-id input)))]
+        id    (apply str (drop 6 (.-id input)))] ;; drops "input_"
     (do
       (update-attr id "title" text)
       (refresh-data))))
@@ -88,7 +90,8 @@
 (defn redraw-todos-ui []
   (let [ul (by-id "todo-list")]
     (set! (.-innerHTML ul) "")
-    (set! (.-value (by-id "new-todo")) "")
+    ;;(dom/remove-children "todo-list")
+    (dom/set-value (by-id "new-todo") "")
     (dorun ;; materialize lazy list returned by map below
      (map
       (fn [todo]
@@ -134,14 +137,11 @@
 
 (defn draw-todo-count []
   (let [stat (stats)
-        number (dom/element :strong)
-        remaining (dom/element :span)
         text (str " " (if (= 1 (:left stat)) "item" "items") " left")
+        number (dom/element :strong (str (:left stat)))
+        remaining (dom/element :span {"id" "todo-count"})
         footer (by-id "footer")]
-    (set! (.-innerHTML number) (:left stat))
-    (set! (.-id remaining) "todo-count")
-    (dom/append remaining number)
-    (dom/append remaining (.createTextNode js/document text))
+    (dom/append remaining number text)
     (dom/append footer remaining)))
 
 (defn clear-click-handler []
@@ -149,20 +149,19 @@
   (refresh-data))
 
 (defn draw-todo-clear []
-  (let [button (dom/element :button)
-        footer (by-id "footer")]
-    (set! (.-id button) "clear-completed")
+  (let [footer (by-id "footer")
+        button (dom/element
+                :button {"id" "clear-completed"}
+                (str "Clear completed (" (:completed (stats)) ")"))]
     (ev/listen button "click" clear-click-handler)
-    (set! (.-innerHTML button)
-          (str "Clear completed (" (:completed (stats)) ")"))
     (dom/append footer button)))
 
 (defn redraw-status-ui []
   (let [footer  (by-id "footer")
         display (if (empty? @todo-list) "none" "block")
         stat (stats)]
-    (set! (.-innerHTML footer) "")
-    (set! (.-display (.-style (by-id "footer"))) display)
+    (dom/remove-children "footer")
+    (dom/set-properties footer {"style" (str "display:" display)})
     (if (not= 0 (:completed stat)) (draw-todo-clear))
     (if (not= 0 (:total stat)) (draw-todo-count))))
 
