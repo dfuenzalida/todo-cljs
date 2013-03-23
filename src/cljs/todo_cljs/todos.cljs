@@ -7,8 +7,7 @@
 (def ENTER_KEY 13)
 (def STORAGE_NAME "todos-cljs")
 (defn by-id [id] (dom/get-element id))
-(def todo-list (atom []))
-(def stat (atom {}))
+(def todo-list (atom [])) ;; all the application state in this vector
 
 ;; State management
 
@@ -24,12 +23,12 @@
   (reset! todo-list
          (js->clj (.parse js/JSON (.getItem js/localStorage STORAGE_NAME)))))
 
-;; TODO reimplement as a fn only and remove the atom
-(defn compute-stats []
+;; now this fn is called whenever info about the status is needed
+(defn stats []
   (let [total     (count @todo-list)
         completed (count (filter #(= true (% "completed")) @todo-list))
         left      (- total completed)]
-    (swap! stat conj {:total total :completed completed :left left})))
+    {:total total :completed completed :left left}))
 
 ;; HELPER: updates a todo by its id, changes puts a new val for the attr
 (defn update-attr [id attr val]
@@ -133,11 +132,12 @@
       @todo-list))))
 
 (defn draw-todo-count []
-  (let [number (dom/element :strong)
+  (let [stat (stats)
+        number (dom/element :strong)
         remaining (dom/element :span)
-        text (str " " (if (= 1 (:left @stat)) "item" "items") " left")
+        text (str " " (if (= 1 (:left stat)) "item" "items") " left")
         footer (by-id "footer")]
-    (set! (.-innerHTML number) (:left @stat))
+    (set! (.-innerHTML number) (:left stat))
     (set! (.-id remaining) "todo-count")
     (dom/append remaining number)
     (dom/append remaining (.createTextNode js/document text))
@@ -152,16 +152,17 @@
         footer (by-id "footer")]
     (set! (.-id button) "clear-completed")
     (.addEventListener button "click" clear-click-handler false)
-    (set! (.-innerHTML button) (str "Clear completed (" (:completed @stat) ")"))
+    (set! (.-innerHTML button) (str "Clear completed (" (:completed (stats)) ")"))
     (dom/append footer button)))
 
 (defn redraw-status-ui []
   (let [footer  (by-id "footer")
-        display (if (empty? @todo-list) "none" "block")]
+        display (if (empty? @todo-list) "none" "block")
+        stat (stats)]
     (set! (.-innerHTML footer) "")
     (set! (.-display (.-style (by-id "footer"))) display)
-    (if (not= 0 (:completed @stat)) (draw-todo-clear))
-    (if (not= 0 (:total @stat)) (draw-todo-count))))
+    (if (not= 0 (:completed stat)) (draw-todo-clear))
+    (if (not= 0 (:total stat)) (draw-todo-count))))
 
 (defn change-toggle-all-checkbox-state []
   (let [toggle-all  (by-id "toggle-all")
@@ -170,7 +171,7 @@
 
 (defn refresh-data []
   (save-todos)
-  (compute-stats)
+  ;; (compute-stats)
   (redraw-todos-ui)
   (redraw-status-ui)
   (change-toggle-all-checkbox-state))
