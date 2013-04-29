@@ -1,8 +1,10 @@
 # todo-cljs
 
-A port of the JavaScript TODOs app to ClojureScript, copied from http://todomvc.com/vanilla-examples/vanillajs/
+A ClojureScript port of the JavaScript TODOs app from http://todomvc.com/
 
 Includes the template and CSS by Sindre Sorhus
+
+![screenshot](http://4.bp.blogspot.com/-s3FkdftKDzo/US_LtUoKnGI/AAAAAAAAEKw/-WupdgyHRUs/s1600/todos-cljs.png)
 
 ## Usage
 
