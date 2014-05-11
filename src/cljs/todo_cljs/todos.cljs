@@ -1,7 +1,10 @@
-(ns todo-cljs.todos
+(ns todo_cljs.todos
   (:require [clojure.browser.repl :as repl]
             [clojure.browser.dom  :as dom]
-            [clojure.browser.event :as ev]))
+            [clojure.browser.event :as ev]
+            [goog.events :as events]))
+
+(enable-console-print!)
 
 ;; Constants and State
 
@@ -99,13 +102,13 @@
     (fn [todo]
       (let [
         id          (todo "id")
-        li          (elemt :li {"id" (str "li_" id)})
-        checkbox    (elemt :input {"class" "toggle" "data-todo-id" id
+        li          (elemt "li" {"id" (str "li_" id)})
+        checkbox    (elemt "input" {"class" "toggle" "data-todo-id" id
                                    "type" "checkbox"})
-        label       (elemt :label {"data-todo-id" id})
-        delete-link (elemt :button {"class" "destroy" "data-todo-id" id})
-        div-display (elemt :div {"class" "view" "data-todo-id" id})
-        input-todo  (elemt :input {"id" (str "input_" id) "class" "edit"})]
+        label       (elemt "label" {"data-todo-id" id})
+        delete-link (elemt "button" {"class" "destroy" "data-todo-id" id})
+        div-display (elemt "div" {"class" "view" "data-todo-id" id})
+        input-todo  (elemt "input" {"id" (str "input_" id) "class" "edit"})]
 
         (dom/set-text label (todo "title"))
         (dom/set-value input-todo (todo "title"))
@@ -130,8 +133,8 @@
 (defn draw-todo-count []
   (let [stat (stats)
         text (str " " (if (= 1 (:left stat)) "item" "items") " left")
-        number (dom/element :strong (str (:left stat)))
-        remaining (dom/element :span {"id" "todo-count"})
+        number (dom/element "strong" (str (:left stat)))
+        remaining (dom/element "span" {"id" "todo-count"})
         footer (by-id "footer")]
     (dom/append remaining number text)
     (dom/append footer remaining)))
@@ -143,7 +146,7 @@
 (defn draw-todo-clear []
   (let [footer (by-id "footer")
         message (str "Clear completed (" (:completed (stats)) ")")
-        button (dom/element :button {"id" "clear-completed"} message)]
+        button (dom/element "button" {"id" "clear-completed"} message)]
     (ev/listen button "click" clear-click-handler)
     (dom/append footer button)))
 
@@ -207,7 +210,7 @@
 
 ;; Launch window-load-handler when window loads
 ;; -- not sure why (ev/listen js/window "load" fn) does not work
-(goog.events/listen js/window "load" window-load-handler)
+(events/listen js/window "load" window-load-handler)
 
 ;; To connect a browser-attached repl:
 ;; (repl/connect "http://localhost:9000/repl")

@@ -5,8 +5,9 @@
             :url "http://www.eclipse.org/legal/epl-v10.html"}
   :min-lein-version "2.0.0"
   :source-paths ["src/clj"]
-  :dependencies [[org.clojure/clojure "1.4.0"]]
-  :plugins [[lein-cljsbuild "0.3.0"]]
+  :dependencies [[org.clojure/clojure "1.6.0"]
+                 [org.clojure/clojurescript "0.0-2173"]]
+  :plugins [[lein-cljsbuild "1.0.2"]]
 
   ;; cljsbuild configuration based on https://github.com/magomimmo/modern-cljs/
   :cljsbuild
@@ -16,7 +17,9 @@
      :compiler
      {:pretty-print true,
       :output-to "resources/public/js/todos.js",
-      :optimizations :whitespace}}
+      :output-dir "resources/public/js/out",
+      :optimizations :none,
+      :source-map true}}
     {:source-paths ["src/cljs"],
      :id "prod",
      :compiler
